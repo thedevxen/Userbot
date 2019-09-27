@@ -114,6 +114,7 @@ async def auto_accept(event):
                                                             limit=1):
                 if message.from_id == (await event.client.get_me()).id:
                     await approve(chat.id)
+                    await cleanUnapproved(event)
                     if BOTLOG:
                         await event.client.send_message(
                             BOTLOG_CHATID,
@@ -126,19 +127,23 @@ async def auto_accept(event):
 async def notifoff(noff_event):
     """ For .notifoff command, stop getting
         notifications from unapproved PMs. """
-    if await notif_off() is False:
-        return await noff_event.edit('`Notifications already silenced!`')
+    if await notif_state() is False:
+        await noff_event.edit(
+            "`Unapproved PM notifications are already silenced!`"
+        )
     else:
-        return await noff_event.edit("`Notifications silenced!`")
+        await notif_off()
+        await noff_event.edit("`Unapproved PM notifications silenced!`")
 
 
 @register(outgoing=True, pattern="^.notifon$")
 async def notifon(non_event):
     """ For .notifoff command, get notifications from unapproved PMs. """
-    if await notif_on() is False:
-        return await non_event.edit("`Notifications ain't muted!")
+    if await notif_state() is True:
+        await non_event.edit("`Unapproved PM notifications aren't silenced!")
     else:
-        return await non_event.edit("`Notifications unmuted!`")
+        await notif_on()
+        await non_event.edit("`Unapproved PM notifications unsilenced!`")
 
 
 @register(outgoing=True, pattern="^.approve$")
@@ -148,8 +153,9 @@ async def approvepm(apprvpm):
         await apprvpm.edit("`Database connections failing!`")
         return
 
-    if await approve(apprvpm.chat_id) is False:
-        return await apprvpm.edit("`User was already approved!`")
+    if await approval(apprvpm.chat_id) is True:
+        await apprvpm.edit("`User is already approved!`")
+        return
     else:
         if apprvpm.reply_to_msg_id:
             reply = await apprvpm.get_reply_message()
@@ -164,7 +170,9 @@ async def approvepm(apprvpm):
             name0 = str(aname.first_name)
             uid = apprvpm.chat_id
 
+        await approve(uid)
         await apprvpm.edit(f"[{name0}](tg://user?id={uid}) `approved to PM!`")
+        await cleanUnapproved(apprvpm)
 
         if BOTLOG:
             await apprvpm.client.send_message(
@@ -180,54 +188,66 @@ async def blockpm(block):
         await block.edit("`Database connections failing!`")
         return
 
-    if await block_pm(block.chat_id) is False:
-        return await block.edit("`First approve, before blocc'ing`")
+    await block.edit("`You are gonna be blocked from PM-ing my Master!`")
+
+    if block.reply_to_msg_id:
+        reply = await block.get_reply_message()
+        replied_user = await block.client(GetFullUserRequest(reply.from_id))
+        aname = replied_user.user.id
+        name0 = str(replied_user.user.first_name)
+        await block.client(BlockRequest(replied_user.user.id))
+        uid = replied_user.user.id
     else:
-        await block.edit("`You are gonna be blocked from PM-ing my Master!`")
+        await block.client(BlockRequest(block.chat_id))
+        aname = await block.client.get_entity(block.chat_id)
+        name0 = str(aname.first_name)
+        uid = block.chat_id
 
-        if block.reply_to_msg_id:
-            reply = await block.get_reply_message()
-            replied_user = await block.client(GetFullUserRequest(reply.from_id)
-                                              )
-            aname = replied_user.user.id
-            name0 = str(replied_user.user.first_name)
-            await block.client(BlockRequest(replied_user.user.id))
-            uid = replied_user.user.id
-        else:
-            await block.client(BlockRequest(block.chat_id))
-            aname = await block.client.get_entity(block.chat_id)
-            name0 = str(aname.first_name)
-            uid = block.chat_id
+    await block_pm(uid)
+    await block.edit("`Blocked.`")
 
-        await block.edit("`Blocked.`")
-
-        if BOTLOG:
-            await block.client.send_message(
-                BOTLOG_CHATID,
-                "#BLOCKED\n" + "User: " + f"[{name0}](tg://user?id={uid})",
-            )
+    if BOTLOG:
+        await block.client.send_message(
+            BOTLOG_CHATID,
+            "#BLOCKED\n" + "User: " + f"[{name0}](tg://user?id={uid})",
+        )
 
 
 @register(outgoing=True, pattern="^.unblock$")
 async def unblockpm(unblock):
     """ For .unblock command, let people PMing you again! """
-    if unblock.reply_to_msg_id:
+    if not unblock.reply_to_msg_id:
+        await unblock.edit("`Who am I going to unblocc?`")
+    else:
         reply = await unblock.get_reply_message()
         replied_user = await unblock.client(GetFullUserRequest(reply.from_id))
         name0 = str(replied_user.user.first_name)
-        if await approve(reply.from_id) is False:
-            return await unblock.edit("`You haven't blocked this user yet!`")
+        if await approval(reply.from_id) is True:
+            await unblock.edit("`You haven't blocked this user yet!`")
+            return
         else:
-            return await unblock.edit("`My Master has forgiven you to PM now`")
+            await unblock.edit("`My Master has forgiven you to PM now`")
 
+        await approve(reply.from_id)
         await unblock.client(UnblockRequest(replied_user.user.id))
 
-    if BOTLOG:
-        await unblock.client.send_message(
-            BOTLOG_CHATID,
-            f"[{name0}](tg://user?id={replied_user.user.id})"
-            " was unblocc'd!.",
-        )
+        if BOTLOG:
+            await unblock.client.send_message(
+                BOTLOG_CHATID,
+                f"[{name0}](tg://user?id={replied_user.user.id})"
+                " was unblocc'd!.",
+            )
+
+
+async def cleanUnapproved(event):
+    async for message in event.client.iter_messages(
+        event.chat_id,
+        from_user='me',
+        search=UNAPPROVED_MSG
+    ):
+        await message.delete()
+
+    return 0
 
 
 CMD_HELP.update({

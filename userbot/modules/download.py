@@ -17,7 +17,7 @@ import re
 import subprocess
 from datetime import datetime
 from io import BytesIO
-from time import sleep
+from asyncio import sleep
 
 import psutil
 from hachoir.metadata import extractMetadata
@@ -46,7 +46,7 @@ async def download_from_url(url: str, file_name: str) -> str:
     start = datetime.now()
     downloader = Downloader(url=url)
     if downloader.is_running:
-        sleep(1)
+        await sleep(1)
     end = datetime.now()
     duration = (end - start).seconds
     os.rename(downloader.file_name, file_name)
@@ -71,7 +71,7 @@ async def download_from_tg(target_file) -> (str, BytesIO):
     reply_msg = await target_file.get_reply_message()
     avail_mem = psutil.virtual_memory().available + psutil.swap_memory().free
     try:
-        if reply_msg.media.document.size >= avail_mem:  # unlikely to happen but baalaji crai
+        if reply_msg.media.document.size >= avail_mem:
             filen = await target_file.client.download_media(
                 reply_msg,
                 progress_callback=progress,

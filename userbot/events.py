@@ -19,6 +19,41 @@ from telethon.tl.types import ChannelParticipantsAdmins
 from userbot import LogicWorker, bot
 
 
+header = """**Sorry, I encountered a error!**
+If you wanna you can report it \
+- just forward this message to [{}]({}).
+I won't log anything except the fact of error and date"""
+
+disclaimer = """Disclaimer:
+This file is ONLY uploaded here, \
+we logged only the fact of error and date, \
+and we respect your privacy, \
+you may not report this error if you've \
+any confidential data here, noone will see your data.
+
+
+--------BEGIN USERBOT TRACEBACK LOG--------
+
+Date: {date}
+Group ID: {group}
+Sender ID: {sender}
+
+Event Trigger:
+{trigger}
+
+Traceback info:
+{traceback}
+
+Error text:
+{error}
+
+--------END USERBOT TRACEBACK LOG--------
+
+
+Last 5 commits:
+{commits}"""
+
+
 def register(**args):
     """ Register a new event. """
     pattern = args.get('pattern', None)
@@ -56,8 +91,7 @@ def register(**args):
                 await check.respond("`Are you sure this is a group?`")
                 return
 
-            # Check if the sudo is an admin already, if yes, we can avoid acting to his command.
-            #If his admin was limited, its his problem.
+            # Check if the sudo is an admin already.
             if permit_sudo and not check.out:
                 if check.sender_id in LogicWorker:
                     async for user in check.client.iter_participants(
@@ -72,15 +106,14 @@ def register(**args):
             try:
                 await func(check)
             #
-            # HACK HACK HACK
-            # Raise StopPropagation to Raise StopPropagation
-            # This needed for AFK to working properly
+            # Raise StopPropagation again if required by a function
+            #
             # TODO
             # Rewrite events to not passing all exceptions
             #
             except events.StopPropagation:
                 raise events.StopPropagation
-            # This is a gay exception and must be passed out. So that it doesnt spam chats
+            # Exception must be passed out to avoid unexpected spam.
             except KeyboardInterrupt:
                 pass
             except BaseException:
@@ -91,34 +124,7 @@ def register(**args):
 
                 if not disable_errors:
                     date = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-
-                    text = "**Sorry, I encountered a error!**\n"
-                    link = "[https://t.me/userbot_support](Userbot Support Chat)"
-                    text += "If you wanna you can report it"
-                    text += f"- just forward this message to {link}.\n"
-                    text += "I won't log anything except the fact of error and date\n"
-
-                    ftext = "\nDisclaimer:\nThis file uploaded ONLY here, "
-                    ftext += "we logged only fact of error and date, "
-                    ftext += "we respect your privacy, "
-                    ftext += "you may not report this error if you've "
-                    ftext += "any confidential data here, noone will see your data\n\n"
-                    ftext += "--------BEGIN USERBOT TRACEBACK LOG--------"
-                    ftext += "\nDate: " + date
-                    ftext += "\nGroup ID: " + str(check.chat_id)
-                    ftext += "\nSender ID: " + str(check.sender_id)
-                    ftext += "\n\nEvent Trigger:\n"
-                    ftext += str(check.text)
-                    ftext += "\n\nTraceback info:\n"
-                    ftext += str(format_exc())
-                    ftext += "\n\nError text:\n"
-                    ftext += str(sys.exc_info()[1])
-                    ftext += "\n\n--------END USERBOT TRACEBACK LOG--------"
-
                     command = "git log --pretty=format:\"%an: %s\" -5"
-
-                    ftext += "\n\n\nLast 5 commits:\n"
-
                     process = await asyncsubshell(command,
                                                   stdout=asyncsub.PIPE,
                                                   stderr=asyncsub.PIPE)
@@ -126,7 +132,18 @@ def register(**args):
                     result = str(stdout.decode().strip()) \
                         + str(stderr.decode().strip())
 
-                    ftext += result
+                    text = header.format(
+                        "https://t.me/userbot_support", "Userbot Support Chat)"
+                    )
+                    ftext = disclaimer.format(
+                        date=date,
+                        group=str(check.chat_id),
+                        sender=str(check.sender_id),
+                        trigger=str(check.text),
+                        traceback=str(format_exc()).strip(),
+                        error=str(sys.exc_info()[1]),
+                        commits=result
+                    )
 
                     file = open("error.log", "w+")
                     file.write(ftext)

@@ -9,7 +9,6 @@
 import asyncio
 import random
 import re
-import time
 
 from cowpy import cow
 
@@ -214,7 +213,7 @@ async def kek(keks):
     """ Check yourself ;)"""
     uio = ["/", "\\"]
     for i in range(1, 15):
-        time.sleep(0.3)
+        await asyncio.sleep(0.3)
         await keks.edit(":" + uio[i % 2])
 
 
@@ -318,7 +317,7 @@ async def zal(zgfy):
         message = textx.text
     else:
         await zgfy.edit(
-            "`gͫ ̆ i̛ ̺ v͇̆ ȅͅ   a̢ͦ   s̴̪ c̸̢ ä̸ rͩͣ y͖͞   t̨͚ é̠ x̢͖  t͔͛`"
+            "`gͫ ̆ i̛ ̺ v͇̆ ȅͅ   a̢ͦ   s̴̪ c̸̢ ä̸ rͩͣ y͖͞   t̨͚ é̠ x̢͖  t͛`"
         )
         return
 

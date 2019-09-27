@@ -83,7 +83,9 @@ async def bot_support(wannahelp):
 @register(outgoing=True, pattern="^.repo$")
 async def repo_is_here(wannasee):
     """ For .repo command, just returns the repo URL. """
-    await wannasee.edit("https://github.com/MyPaperPlane/Telegram-UserBot/tree/dev/nub")
+    await wannasee.edit(
+        "https://github.com/MyPaperPlane/Telegram-UserBot/tree/dev/nub"
+    )
 
 
 @register(outgoing=True, pattern="^(?:s|S)/")
@@ -131,11 +133,11 @@ CMD_HELP.update(
 CMD_HELP.update({
     'repo':
     '.repo\n'
-    'Usage: If you are curious what makes Paperplane work, this is what you need.'
+    'Usage: Links the GitHub repository of the current Paperplane branch.'
 })
 
 CMD_HELP.update({
     'regexninja':
     '.enable regexninja or .disable regexninja\n'
-    'Usage: Atutomatically delete sed substitution texts if enabled.'
+    'Usage: Automatically deletes outgoing regexbot sed substitution texts.'
 })

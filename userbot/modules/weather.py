@@ -79,8 +79,8 @@ async def fetch_weather(weather):
                 return
             city = newcity[0].strip() + "," + countrycode.strip()
 
-    url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OpenWeatherAPI}'
-    request = requests.get(url)
+    url = "https://api.openweathermap.org/data/2.5/weather?q={}&appid={}"
+    request = requests.get(url.format(city, OpenWeatherAPI))
     result = json.loads(request.text)
 
     if request.status_code != 200:
@@ -157,17 +157,17 @@ async def set_default_city(city):
         await city.edit("`Please specify a city to set one as default.`")
         return
     else:
-        city = city.pattern_match.group(1)
+        CITY = city.pattern_match.group(1)
 
     timezone_countries = {
         timezone: country
         for country, timezones in c_tz.items() for timezone in timezones
     }
 
-    if "," in city:
-        newcity = city.split(",")
+    if "," in CITY:
+        newcity = CITY.split(",")
         if len(newcity[1]) == 2:
-            city = newcity[0].strip() + "," + newcity[1].strip()
+            CITY = newcity[0].strip() + "," + newcity[1].strip()
         else:
             country = await get_tz((newcity[1].strip()).title())
             try:
@@ -175,17 +175,17 @@ async def set_default_city(city):
             except KeyError:
                 await city.edit(INV_PARAM)
                 return
-            city = newcity[0].strip() + "," + countrycode.strip()
+            CITY = newcity[0].strip() + "," + countrycode.strip()
 
-    url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OpenWeatherAPI}'
-    request = requests.get(url)
+    url = "https://api.openweathermap.org/data/2.5/weather?q={}&appid={}"
+    request = requests.get(url.format(CITY, OpenWeatherAPI))
     result = json.loads(request.text)
 
     if request.status_code != 200:
         await city.edit(INV_PARAM)
         return
 
-    await set_weather(city)
+    await set_weather(CITY)
     cityname = result['name']
     country = result['sys']['country']
 
