@@ -7,6 +7,7 @@
 """ Userbot module for other small commands. """
 
 import sys
+from asyncio import sleep as asleep
 from os import execl
 from random import randint
 from time import sleep
@@ -85,7 +86,7 @@ async def repo_is_here(wannasee):
     await wannasee.edit("https://github.com/MyPaperPlane/Telegram-UserBot/tree/dev/nub")
 
 
-@register(outgoing=True, pattern="^s/")
+@register(outgoing=True, pattern="^(?:s|S)/")
 async def sedNinja(event):
     if regexNinja:
         await event.delete()
@@ -100,6 +101,8 @@ async def sedNinjaToggle(event):
     else:
         regexNinja = False
         await event.edit("`Successfully disabled ninja mode for Regexbot.`")
+    await asleep(2)
+    await event.delete()
 
 
 CMD_HELP.update({
@@ -129,4 +132,10 @@ CMD_HELP.update({
     'repo':
     '.repo\n'
     'Usage: If you are curious what makes Paperplane work, this is what you need.'
+})
+
+CMD_HELP.update({
+    'regexninja':
+    '.enable regexninja or .disable regexninja\n'
+    'Usage: Atutomatically delete sed substitution texts if enabled.'
 })
