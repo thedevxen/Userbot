@@ -32,3 +32,4 @@ pyDownload
 PyDrive
 psutil
 pylast
+rivescript

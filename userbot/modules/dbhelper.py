@@ -454,3 +454,11 @@ async def set_weather(city):
             }})
     else:
         MONGO.misc.insert_one({'weather_city': city})
+
+# Rivescript
+
+async def enable_rs(chatid):
+    REDIS.set('rivescript', 1)
+    return
+async def is_rs_enabled(chatid):
+    return REDIS.get('rivescript')
