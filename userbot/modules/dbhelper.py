@@ -457,8 +457,12 @@ async def set_weather(city):
 
 # Rivescript
 
-async def enable_rs(chatid):
+async def enable_rs():
     REDIS.set('rivescript', 1)
     return
-async def is_rs_enabled(chatid):
-    return REDIS.get('rivescript')
+
+async def disable_rs():
+    REDIS.set('rivescript', 0)
+    return
+async def is_rs_enabled():
+    return REDIS.get('rivescript') == b'1'
